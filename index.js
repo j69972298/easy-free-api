@@ -1,10 +1,16 @@
 const express = require("express");
+const { Pool } = require("pg");
 
 const app = express();
 
 app.use(express.json());
 
-const registros = [];
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
 
 app.get("/", (req, res) => {
     res.json({
@@ -13,7 +19,7 @@ app.get("/", (req, res) => {
     });
 });
 
-app.post("/registrar-ip", (req, res) => {
+app.post("/registrar-ip", async (req, res) => {
     const { ip, discord_id, discord_username } = req.body;
 
     if (!ip) {
@@ -28,26 +34,36 @@ app.post("/registrar-ip", (req, res) => {
         });
     }
 
-    const usuarioJaRegistrado = registros.find(
-        registro => registro.discord_id === discord_id
-    );
+    try {
+        const usuario = await pool.query(
+            "SELECT * FROM registros WHERE discord_id = $1",
+            [discord_id]
+        );
 
-    if (usuarioJaRegistrado) {
-        return res.status(400).json({
-            message: "Você já possui um IP registrado."
+        if (usuario.rows.length > 0) {
+            return res.status(400).json({
+                message: "Você já possui um IP registrado."
+            });
+        }
+
+        await pool.query(
+            `INSERT INTO registros
+            (ip, discord_id, discord_username, data)
+            VALUES ($1, $2, $3, CURRENT_TIMESTAMP)`,
+            [ip, discord_id, discord_username]
+        );
+
+        res.json({
+            message: "IP registrado com sucesso"
+        });
+
+    } catch (erro) {
+        console.error("Erro no banco de dados:", erro);
+
+        res.status(500).json({
+            message: "Erro interno no banco de dados"
         });
     }
-
-    registros.push({
-        ip,
-        discord_id,
-        discord_username,
-        data: new Date()
-    });
-
-    res.json({
-        message: "IP registrado com sucesso"
-    });
 });
 
 const PORT = process.env.PORT || 3000;
