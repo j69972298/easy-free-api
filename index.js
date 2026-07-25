@@ -58,7 +58,7 @@ app.post("/registrar-ip", async (req, res) => {
         });
 
     } catch (erro) {
-        console.error("Erro no banco de dados:", erro);
+        console.error("Erro no banco de dados:", erro.message, erro.detail);
 
         res.status(500).json({
             message: "Erro interno no banco de dados"
