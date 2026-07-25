@@ -22,6 +22,22 @@ app.post("/registrar-ip", (req, res) => {
         });
     }
 
+    if (!discord_id) {
+        return res.status(400).json({
+            message: "Usuário não identificado"
+        });
+    }
+
+    const usuarioJaRegistrado = registros.find(
+        registro => registro.discord_id === discord_id
+    );
+
+    if (usuarioJaRegistrado) {
+        return res.status(400).json({
+            message: "Você já possui um IP registrado."
+        });
+    }
+
     registros.push({
         ip,
         discord_id,
