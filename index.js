@@ -12,6 +12,22 @@ const pool = new Pool({
     }
 });
 
+pool.query(`
+    CREATE TABLE IF NOT EXISTS registros (
+        id SERIAL PRIMARY KEY,
+        ip TEXT NOT NULL,
+        discord_id TEXT NOT NULL UNIQUE,
+        discord_username TEXT,
+        data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+`)
+.then(() => {
+    console.log("Tabela registros pronta!");
+})
+.catch(erro => {
+    console.error("Erro ao criar tabela:", erro);
+});
+
 app.get("/", (req, res) => {
     res.json({
         status: "online",
@@ -58,7 +74,11 @@ app.post("/registrar-ip", async (req, res) => {
         });
 
     } catch (erro) {
-        console.error("Erro no banco de dados:", erro.message, erro.detail);
+        console.error(
+            "Erro no banco de dados:",
+            erro.message,
+            erro.detail
+        );
 
         res.status(500).json({
             message: "Erro interno no banco de dados"
